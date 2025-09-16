@@ -15,7 +15,7 @@ import org.maxicp.search.SearchStatistics;
 import java.util.Arrays;
 
 import static org.maxicp.cp.CPFactory.*;
-import static org.maxicp.search.Searches.EMPTY;
+import static org.maxicp.search.Searches.*;
 
 
 /**
@@ -35,6 +35,11 @@ public class NQueens {
         cp.post(allDifferent(qL));
         cp.post(allDifferent(qR));
 
+
+        DFSearch search = makeDfs(cp, firstFail(q));
+
+
+        /*
         DFSearch search = CPFactory.makeDfs(cp, () -> {
             int idx = -1; // index of the first variable that is not fixed
             for (int k = 0; k < q.length; k++)
@@ -51,30 +56,24 @@ public class NQueens {
                 Runnable right = () -> cp.post(CPFactory.neq(qi, v));
                 return new Runnable[]{left, right};
             }
-        });
+        });*/
 
         // a more compact first fail search using selectors is given next
-/*
-        DFSearch search = Factory.makeDfs(cp, () -> {
-            IntVar qs = selectMin(q,
+        /*
+        DFSearch search = makeDfs(cp, () -> {
+            CPIntVar qs = selectMin(q,
                     qi -> qi.size() > 1,
                     qi -> qi.size());
             if (qs == null) return EMPTY;
             else {
                 int v = qs.min();
-                return branch(() -> cp.post(Factory.equal(qs, v)),
-                        () -> cp.post(Factory.notEqual(qs, v)));
+                return branch(() -> cp.post(CPFactory.eq(qs, v)),
+                        () -> cp.post(CPFactory.neq(qs, v)));
             }
         });*/
 
 
-        search.onSolution(() ->
-                System.out.println("solution:" + Arrays.toString(q))
-        );
-        SearchStatistics stats = search.solve(statistics -> statistics.numberOfSolutions() == 1000);
 
-        System.out.format("#Solutions: %s\n", stats.numberOfSolutions());
-        System.out.format("Statistics: %s\n", stats);
 
     }
 }
