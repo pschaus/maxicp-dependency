@@ -25,7 +25,7 @@
         <dependency>
             <groupId>com.github.aia-uclouvain</groupId>
             <artifactId>maxicp</artifactId>
-            <version>a0f4e2b24e</version>
+            <version>cc6d6b0665</version>
         </dependency>
     </dependencies>
 

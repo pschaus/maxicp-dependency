@@ -28,6 +28,9 @@ public class Rostering {
     // skill[e][s] = k if employee skilled used at slot s is k
     CPIntVar[][] skill;
 
+    int[][] skillBest; // current best solution
+
+
     CPIntVar[] missedSkills; // number of skills missing at each slot
     CPIntVar totalMissedSkills; // total number of missing skills
 
@@ -48,6 +51,7 @@ public class Rostering {
                 skill[e][s] = CPFactory.makeIntVar(cp, data.getEmployeeSkills(e));
             }
         }
+        skillBest = new int[data.employees][data.slots];
 
         missedSkills = CPFactory.makeIntVarArray(cp, data.slots, 0, data.employees);
         totalMissedSkills = sum(missedSkills);
@@ -101,6 +105,14 @@ public class Rostering {
         System.out.println("Dummy skill: " + data.dummySkill);
         dfSearch.onSolution(() -> {
             System.out.println("===========> Total missed skills: " + totalMissedSkills);
+
+            // update skill best
+            for (int e = 0; e < data.employees; e++) {
+                for (int t = 0; t < data.slots; t++) {
+                    skillBest[e][t] = skill[e][t].min();
+                }
+            }
+
             /*
             System.out.println("Employee");
             for (int e = 0; e < data.employees; e++) {
@@ -113,7 +125,26 @@ public class Rostering {
         });
 
         Objective obj = cp.minimize(totalMissedSkills);
-        dfSearch.optimize(obj);
+        dfSearch.optimize(obj, s -> s.numberOfSolutions() > 0);
+        //dfSearch.optimize(obj);
+        Random rand = new Random(0);
+
+        // LNS
+        for (int iter = 0; iter < 1000; iter++) {
+            int it = iter;
+            dfSearch.optimizeSubjectTo(obj, s -> s.numberOfFailures() > 1000, () -> {
+                System.out.println("................ restart .............." + it);
+                for (int e = 0; e < data.employees; e++) {
+                    for (int t = 0; t < data.slots; t++) {
+                        if (rand.nextDouble() > 0.20) { // 75% of the employe-slot remain fixed as the currebnt best solution
+                            cp.post(eq(skill[e][t],skillBest[e][t]), false); // false is to delay fix-point
+                        }
+                    }
+                }
+                cp.fixPoint();
+
+            });
+        }
     }
 
 
@@ -121,7 +152,7 @@ public class Rostering {
     public static void main(String[] args) throws IOException {
         try {
             RosteringData data_ = RosteringData.parseFile("data/ROSTERING/input_hard.txt");
-            RosteringData data = RosteringData.randomInstance(30,20,10,0.3,5);
+            RosteringData data = RosteringData.randomInstance(90,30,10,0.3,5);
 
             Rostering rostering = new Rostering(data);
             rostering.optimize();
