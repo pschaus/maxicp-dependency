@@ -1,117 +1,117 @@
-name: Test and Coverage
+  name: Test and Coverage
 
-on:
-  push:
-    branches:
-      - main
+  on:
+    push:
+      branches:
+        - main
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        maven: ['3.8.5']
-        java: ['21']
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3  # Updated from v1 to v3
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          maven: ['3.8.5']
+          java: ['21']
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v3  # Updated from v1 to v3
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: ${{ matrix.java }}
+        - name: Setup Java
+          uses: actions/setup-java@v3
+          with:
+            distribution: 'temurin'
+            java-version: ${{ matrix.java }}
 
-      - name: Cache Maven dependencies
-        uses: actions/cache@v3  # Updated to v3
-        with:
-          path: ~/.m2/repository
-          key: maven-${{ runner.os }}-${{ matrix.java }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            maven-${{ runner.os }}-${{ matrix.java }}-
+        - name: Cache Maven dependencies
+          uses: actions/cache@v3  # Updated to v3
+          with:
+            path: ~/.m2/repository
+            key: maven-${{ runner.os }}-${{ matrix.java }}-${{ hashFiles('**/pom.xml') }}
+            restore-keys: |
+              maven-${{ runner.os }}-${{ matrix.java }}-
 
-      - name: Setup Maven
-        uses: s4u/setup-maven-action@v1.18.0
-        with:
-          java-version: ${{ matrix.java }}
-          maven-version: ${{ matrix.maven }}
+        - name: Setup Maven
+          uses: s4u/setup-maven-action@v1.18.0
+          with:
+            java-version: ${{ matrix.java }}
+            maven-version: ${{ matrix.maven }}
 
-      - name: Extract branch name
-        id: extract_branch
-        run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+        - name: Extract branch name
+          id: extract_branch
+          run: echo "branch=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
 
-      - name: Generate test
-        id: test
-        run: |
-          echo "compiling"
-          mvn compile
-          echo "testing"
-          mvn test
+        - name: Generate test
+          id: test
+          run: |
+            echo "compiling"
+            mvn compile
+            echo "testing"
+            mvn test
 
-      - name: Generate the badge SVG using Shields.io
-        run: |
-          # Ensure COVERAGE is extracted and is a valid number
-          COVERAGE="${{ env.coverage }}"
-          
-          # Debugging: Print coverage value
-          echo "Extracted Coverage: $COVERAGE"
-          
-          # Validate that COVERAGE is a number
-          if [[ ! "$COVERAGE" =~ ^[0-9]+$ ]]; then
-            echo "Error: COVERAGE is not a valid number ('$COVERAGE'). Defaulting to 0."
-            COVERAGE="0"
-          fi
-          
-          # Assign color based on coverage percentage
-          if [ "$COVERAGE" -gt 90 ]; then COLOR="green"
-          elif [ "$COVERAGE" -gt 80 ]; then COLOR="yellowgreen"
-          elif [ "$COVERAGE" -gt 70 ]; then COLOR="yellow"
-          elif [ "$COVERAGE" -gt 60 ]; then COLOR="orange"
-          else COLOR="red"
-          fi
-          
-          # Debugging: Print the final values
-          echo "Final Coverage: $COVERAGE%"
-          echo "Badge Color: $COLOR"
-          
-          # Download and save the badge
-          curl -o coverbadge.svg \
-            "https://img.shields.io/badge/Test%20Coverage-$COVERAGE%25-$COLOR.svg"
-          
-          mv coverbadge.svg /tmp/.
-          
+        - name: Generate the badge SVG using Shields.io
+          run: |
+            # Ensure COVERAGE is extracted and is a valid number
+            COVERAGE="${{ env.coverage }}"
+            
+            # Debugging: Print coverage value
+            echo "Extracted Coverage: $COVERAGE"
+            
+            # Validate that COVERAGE is a number
+            if [[ ! "$COVERAGE" =~ ^[0-9]+$ ]]; then
+              echo "Error: COVERAGE is not a valid number ('$COVERAGE'). Defaulting to 0."
+              COVERAGE="0"
+            fi
+            
+            # Assign color based on coverage percentage
+            if [ "$COVERAGE" -gt 90 ]; then COLOR="green"
+            elif [ "$COVERAGE" -gt 80 ]; then COLOR="yellowgreen"
+            elif [ "$COVERAGE" -gt 70 ]; then COLOR="yellow"
+            elif [ "$COVERAGE" -gt 60 ]; then COLOR="orange"
+            else COLOR="red"
+            fi
+            
+            # Debugging: Print the final values
+            echo "Final Coverage: $COVERAGE%"
+            echo "Badge Color: $COLOR"
+            
+            # Download and save the badge
+            curl -o coverbadge.svg \
+              "https://img.shields.io/badge/Test%20Coverage-$COVERAGE%25-$COLOR.svg"
+            
+            mv coverbadge.svg /tmp/.
+            
 
-      - name: Checkout gh-pages branch
-        uses: actions/checkout@v3  # Updated from v1 to v3
-        with:
-          ref: gh-pages
+        - name: Checkout gh-pages branch
+          uses: actions/checkout@v3  # Updated from v1 to v3
+          with:
+            ref: gh-pages
 
-      - name: Commit and Push Badge
-        run: |
-          
-          if [ ! -d "badges" ]; then
-            mkdir badges
-            echo "badges created."
-          else
-            echo "badges already exists."
-          fi
-          
-          mv /tmp/coverbadge.svg badges/.
-          
-          cd badges
-          ls -lah  # Debugging step to confirm files exist
-          
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          
-          # Ensure the badge file exists before adding it
-          if [ -f "coverbadge.svg" ]; then
-            git add coverbadge.svg
-            git commit -m "Add/Update badge" || echo "No changes to commit"
-          
-            # Push only if there were actual changes
-            git push origin gh-pages
-          else
-            echo "Badge file not found! Skipping commit and push."
-          fi
-
+        - name: Commit and Push Badge
+          run: |
+            
+            if [ ! -d "badges" ]; then
+              mkdir badges
+              echo "badges created."
+            else
+              echo "badges already exists."
+            fi
+            
+            mv /tmp/coverbadge.svg badges/.
+            
+            cd badges
+            ls -lah  # Debugging step to confirm files exist
+            
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            
+            # Ensure the badge file exists before adding it
+            if [ -f "coverbadge.svg" ]; then
+              git add coverbadge.svg
+              git commit -m "Add/Update badge" || echo "No changes to commit"
+            
+              # Push only if there were actual changes
+              git push origin gh-pages
+            else
+              echo "Badge file not found! Skipping commit and push."
+            fi
+  

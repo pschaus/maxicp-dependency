@@ -25,7 +25,7 @@
         <dependency>
             <groupId>com.github.aia-uclouvain</groupId>
             <artifactId>maxicp</artifactId>
-            <version>cc6d6b0665</version>
+            <version>main-4b16917cdd-1</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
